@@ -479,6 +479,12 @@ consensusOverlap() {
   fi
 }
 
+######################################################### Main Program Begins #########################################
+
+echo ""
+echo "##################################### Begin HAMRbox #################################"
+echo ""
+
 mismatch=$(($length*6/100))
 overhang=$(($mismatch-1))
 export PATH="$repo/gatk-4.3.0.0/:$PATH"
@@ -528,11 +534,11 @@ fi
 ##########fqgrab main begins#########
 
 # Grabs the fastq files from acc list provided into the dir ~/datasets
-# i=0
-# while IFS= read -r line
-# do ((i=i%$threads)); ((i++==0)) && wait
-#   fqgrab &
-# done < "$acc"
+i=0
+while IFS= read -r line
+do ((i=i%$threads)); ((i++==0)) && wait
+  fqgrab &
+done < "$acc"
 
 wait
 
@@ -540,6 +546,7 @@ wait
 
 echo ""
 echo "################ Finished downloading and processing all fastq files. Entering pipeline for HAMR analysis. ######################"
+echo ""
 
 ############fastq2hamr housekeeping begins##############
 # Checks if the files were trimmed or cleaned, and if so, take those files for downstream
@@ -654,12 +661,12 @@ if [ ! -d "$out/pipeline/depth" ]; then mkdir $out/pipeline/depth; echo "created
 #############fastq2hamr main begins###############
 # Pipes each fastq down the hamr pipeline, and stores out put in ~/hamr_out
 # Note there's also a hamr_out in ~/pipeline/SRRNUMBER_temp/, but that one's for temp files
-# i=0
-# ttop=$(($threads/2))
-# for smp in $hamrin/*.$suf
-# do ((i=i%$ttop)); ((i++==0)) && wait
-#   fastq2hamr &
-# done
+i=0
+ttop=$(($threads/2))
+for smp in $hamrin/*.$suf
+do ((i=i%$ttop)); ((i++==0)) && wait
+  fastq2hamr &
+done
 
 wait
 
@@ -670,7 +677,7 @@ if [ -z "$(ls -A $out/hamr_out)" ]; then
 fi
 
 # If program didn't exit, at least 1 mod file, move zero mod record outside so it doesn't get read as a modtbl next
-# mv $out/hamr_out/zero_mod.txt $out
+mv $out/hamr_out/zero_mod.txt $out
 
 # Produce consensus bam files based on filename (per extracted from name.csv) and store in ~/consensus
 if [ ! -d "$out/consensus" ]; then mkdir $out/consensus; echo "created path: $out/consensus"; fi
@@ -681,7 +688,9 @@ if ! command -v Rscript > /dev/null; then
     exit 1
 fi
 
+echo ""
 echo "################ Finished HAMR analysis. Producing consensus mod table and depth analysis. ######################"
+echo ""
 
 #############fastq2hamr main ends###############
 
@@ -769,7 +778,9 @@ for smp in $out/consensus/*
 do consensusOverlap
 done
 
+echo ""
 echo "###############SMACK portion completed, entering EXTRACT################"
+echo ""
 #######################################begins EXTRACT######################################
 dir=$out
 
@@ -878,7 +889,6 @@ else
     fi
 fi
 
-
 echo "classifying modified RNA subtype..."
 # looking at RNA subtype for mods
 Rscript $curdir/RNAtype.R \
@@ -900,3 +910,7 @@ if [ -e $genomedir/*_CDS.bed ] && [ -e $genomedir/*_fiveUTR.bed ] && [ -e $genom
     echo "done"
     echo ""
 fi
+
+echo ""
+echo "#################################### HAMRbox has finished running #######################################"
+echo ""
