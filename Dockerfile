@@ -1,4 +1,4 @@
-FROM ubuntu:latest
+FROM ubuntu:18.04
 
 LABEL This Dockerfile is for hamrbox. It is maintained by Harry Li <harrli02@sas.upenn.edu>
 ENV DEBIAN_FRONTEND=noninteractive
