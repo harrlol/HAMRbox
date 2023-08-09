@@ -17,6 +17,7 @@ cat <<'EOF'
   -t <SRA accession list txt file>
   -c <filename table csv file>
   -g <reference genome directory>
+  -a <tophat>
   -l <read length>
   -s <genome length in basepair>
   -r <repo location for some softwares>
@@ -34,14 +35,16 @@ EOF
 }
 
 threads=4
+tophat=false
 quality=30
 coverage=50
 err=0.01
 pvalue=1
 fdr=0.05
+tophatlib="fr-firststrand"
 
 #############Grabbing arguments############
-while getopts ":o:t:c:g:l:s:r:f:m:n:hQCEPF:" opt; do
+while getopts ":o:t:c:g:l:s:r:f:m:n:hQCabEPF:" opt; do
   case $opt in
     o)
     out=$OPTARG # project output directory root
@@ -79,8 +82,14 @@ while getopts ":o:t:c:g:l:s:r:f:m:n:hQCEPF:" opt; do
     C)
     coverage=$OPTARG
     ;;
+    b)
+    tophatlib=$OPTARG
+    ;;
     E)
     err=$OPTARG
+    ;;
+    a)
+    tophat=true
     ;;
     P)
     pvalue=$OPTARG
@@ -106,6 +115,7 @@ done
 
 ######################################################### Subprogram Definition #########################################
 fqgrab() {
+
   echo "begin downloading $line..."
 
   fasterq-dump "$line" -O $dumpout/raw --verbose
@@ -158,6 +168,19 @@ fqgrab() {
   fi
   echo "finished processing $line"
   echo ""
+}
+
+fqgrab2() {
+    sname=$(basename $fq)
+    tt=${sname%.*} 
+    echo "[$sname] performing fastqc on raw file..."
+    fastqc $fq -o $dumpout/fastqc_results &
+
+    echo "[$sname] trimming..."
+    trim_galore -o $dumpout/trimmed $fq
+
+    echo "[$sname] trimming complete, performing fastqc..."
+    fastqc $dumpout/trimmed/$tt"_trimmed.fq" -o $dumpout/fastqc_results
 }
 
 fastq2hamr() {
@@ -255,8 +278,34 @@ fastq2hamr() {
   echo "[$smpkey] Begin HAMR pipeline"
   cd $smpout
   # maps the trimmed reads to provided annotated genome, can take ~1.5hr
-  # fine tuning of the arguments might be needed
-  if [ "$det" -eq 1 ]; then
+
+  if [[ "$tophat" = false ]]; then  
+    echo "Using STAR for mapping..."
+    # Check if indexed files already present for STAR
+    if [ -e "$out/ref/SAindex" ]; then
+        echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
+    else
+    # If not, first check if ref folder is present, if not then make
+        if [ ! -d "$out/ref" ]; then mkdir "$out/ref"; echo "created path: $out/ref"; fi
+
+        # Now, do the indexing step
+        # Define the SA index number argument
+        log_result=$(echo "scale=2; l($genomelength)/l(2)/2 - 1" | bc -l)
+        sain=$(echo "scale=0; if ($log_result < 14) $log_result else 14" | bc)
+
+        # Create genome index 
+        STAR \
+            --runThreadN $threads \
+            --runMode genomeGenerate \
+            --genomeDir $out/ref \
+            --genomeFastaFiles $genome \
+            --sjdbGTFfile $annotation \
+            --sjdbGTFtagExonParentTranscript Parent \
+            --sjdbOverhang $overhang \
+            --genomeSAindexNbases $sain
+    fi
+
+    if [ "$det" -eq 1 ]; then
     echo "[$smpkey] Performing STAR with a single-end file."
     STAR \
       --runThreadN 2 \
@@ -268,7 +317,7 @@ fastq2hamr() {
       --outFilterMultimapNmax 10 \
       --outFilterMismatchNmax $mismatch \
       --outSAMtype BAM SortedByCoordinate
-  else
+    else
     echo "[$smpkey] Performing STAR with a paired-end file."
     STAR \
       --runThreadN 2 \
@@ -280,7 +329,56 @@ fastq2hamr() {
       --outFilterMultimapNmax 10 \
       --outFilterMismatchNmax $mismatch \
       --outSAMtype BAM SortedByCoordinate
-  fi
+    fi
+
+  else
+    echo "Using TopHat2 for mapping..."
+    # Check if indexed files already present for STAR
+    if [ -e "$out/btref" ]; then
+        echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
+    else
+    # If not, first check if ref folder is present, if not then make
+        if [ ! -d "$out/btref" ]; then mkdir "$out/btref"; echo "created path: $out/btref"; fi
+
+        echo "Creating Bowtie references..."
+        bowtie2-build $genome $out/btref
+
+    # set read distabce based on mistmatch num
+    red=8
+    if (($mismatch > 8)); then
+    red=$((mismatch +1))
+    fi
+
+    if [ "$det" -eq 1 ]; then
+    echo "[$smpkey] Performing TopHat2 with a single-end file."
+    tophat2 \
+        --library-type $tophatlib \
+        --read-mismatches $mismatch \
+        --read-edit-dist $red \
+        --max-multihits 10 \
+        --b2-very-sensitive \
+        --transcriptome-max-hits 10 \
+        --no-coverage-search \
+        -G $annotation \
+        -p $threads \
+        $out/btref \
+        $smp
+    else
+    echo "[$smpkey] Performing TopHat2 with a paired-end file."
+    tophat2 \
+        --library-type $tophatlib \
+        --read-mismatches $mismatch \
+        --read-edit-dist $red \
+        --max-multihits 10 \
+        --b2-very-sensitive \
+        --transcriptome-max-hits 10 \
+        --no-coverage-search \
+        -G $annotation \
+        -p $threads \
+        $out/btref \
+        $smp1 $smp2
+    fi
+  
   cd
 
   wait
@@ -495,10 +593,22 @@ if [ ! -d "$out" ]; then mkdir $out; echo "created path: $out"; fi
 if [ ! -d "$out/datasets" ]; then mkdir $out/datasets; echo "created path: $out/datasets"; fi
 dumpout=$out/datasets
 
-# Create directory to store original fastq files
-if [ ! -d "$out/datasets/raw" ]; then mkdir $out/datasets/raw; fi
-echo "You can find your original fastq files at $out/datasets/raw" 
-# fasterq-dump to here
+# first see what input is provided
+if [[ $acc == *.txt ]]; then
+    echo "SRR accession list provided, using fasterq-dump for .fastq acquisition..."
+
+    # Create directory to store original fastq files
+    if [ ! -d "$out/datasets/raw" ]; then mkdir $out/datasets/raw; fi
+    echo "You can find your original fastq files at $out/datasets/raw" 
+    mode=1
+
+elif [[ -d $acc ]]; then
+    echo "Directory $acc is found, assuming raw fastq files are provided..."
+    mode=2
+else
+    echo "Error recognizing input source, exiting..."
+    exit 1
+fi
 
 # Create directory to store trimmed fastq files
 if [ ! -d "$out/datasets/trimmed" ]; then mkdir $out/datasets/trimmed; fi
@@ -528,17 +638,26 @@ if ! command -v gatk > /dev/null; then
     echo "Failed to call gatk command. Please check your installation."
     exit 1
 fi
+
 ##########fqgrab housekeeping ends#########
 
 
 ##########fqgrab main begins#########
+if [[ $mode -eq 1 ]]; then
+    # Grabs the fastq files from acc list provided into the dir ~/datasets
+    i=0
+    while IFS= read -r line
+    do ((i=i%$threads)); ((i++==0)) && wait
+    fqgrab &
+    done < "$acc"
 
-# Grabs the fastq files from acc list provided into the dir ~/datasets
-i=0
-while IFS= read -r line
-do ((i=i%$threads)); ((i++==0)) && wait
-  fqgrab &
-done < "$acc"
+elif [[ $mode -eq 2 ]]; then
+    i=0
+    for fq in $acc/*; do
+    ((i=i%$threads)); ((i++==0)) && wait
+    fqgrab2 &
+    done
+fi
 
 wait
 
@@ -602,30 +721,6 @@ dict=$(find $genomedir -maxdepth 1 -name "*.dict")
 count=`ls -1 $genomedir/*.fai 2>/dev/null | wc -l`
 if [ $count == 0 ]; then 
   samtools faidx $genome
-fi
-
-# Check if indexed files already present for STAR
-if [ -e "$out/ref/SAindex" ]; then
-    echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
-else
-# If not, first check if ref folder is present, if not then make
-    if [ ! -d "$out/ref" ]; then mkdir "$out/ref"; echo "created path: $out/ref"; fi
-
-    # Now, do the indexing step
-    # Define the SA index number argument
-    log_result=$(echo "scale=2; l($genomelength)/l(2)/2 - 1" | bc -l)
-    sain=$(echo "scale=0; if ($log_result < 14) $log_result else 14" | bc)
-
-    # Create genome index 
-    STAR \
-        --runThreadN $threads \
-        --runMode genomeGenerate \
-        --genomeDir $out/ref \
-        --genomeFastaFiles $genome \
-        --sjdbGTFfile $annotation \
-        --sjdbGTFtagExonParentTranscript Parent \
-        --sjdbOverhang $overhang \
-        --genomeSAindexNbases $sain
 fi
 
 # Run a series of command checks to ensure fastq2hamr can run smoothly
