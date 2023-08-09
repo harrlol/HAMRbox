@@ -27,3 +27,8 @@
 | -m | \[HAMR model\]|
 | -n | \[number of threads\]|
 | -h | \[help message\]|
+
+## Running HAMRbox (demo)
+
+Pull docker image from this git
+```docker pull harrlol/hamrbox```
