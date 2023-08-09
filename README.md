@@ -19,6 +19,7 @@
 | -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand\]|
 | -A | \[use TopHat2 instead of STAR\]|
 | -f | \[filter\]|
+| -e | \[genome annotation generator\]|
 | -Q | \[HAMR: minimum qualuty score, default=30\]|
 | -C | \[HAMR: minimum coveragem default=50\]|
 | -E | \[HAMR: sequencing error, default=0.01\]|
