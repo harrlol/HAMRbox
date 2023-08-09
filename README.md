@@ -35,3 +35,18 @@ Pull docker image from this git
 ```
 docker pull harrlol/hamrbox
 ```
+
+Download genome fastq file for Arabidopsis thaliana
+```
+wget -qO- https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-57/fasta/arabidopsis_thaliana/dna/Arabidopsis_thaliana.TAIR10.dna.toplevel.fa.gz | tar xvz 
+```
+
+Download annotation gff3 file for Arabidopsis thaliana
+```
+wget -qO- https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-57/gff3/arabidopsis_thaliana/Arabidopsis_thaliana.TAIR10.57.gff3.gz | tar xvz 
+```
+
+Run HAMRbox
+```
+docker run --rm -v $(pwd):/working-dir -w /working-dir harrlol/hamrbox -a ~/demo/
+```
