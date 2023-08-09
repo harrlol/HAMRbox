@@ -17,7 +17,6 @@
 | -s | \<genome size in bp \> |
 | -a | \[use TopHat2 instead of STAR\]|
 | -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand\]|
-| -A | \[use TopHat2 instead of STAR\]|
 | -f | \[filter\]|
 | -e | \[genome annotation generator\]|
 | -Q | \[HAMR: minimum qualuty score, default=30\]|
