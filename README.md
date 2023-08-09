@@ -32,4 +32,6 @@
 ## Running HAMRbox (demo)
 
 Pull docker image from this git
-```docker pull harrlol/hamrbox```
+```
+docker pull harrlol/hamrbox
+```
