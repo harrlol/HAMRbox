@@ -48,5 +48,5 @@ wget -qO- https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-57/gff3/arabid
 
 Run HAMRbox
 ```
-docker run --rm -v $(pwd):/working-dir -w /working-dir harrlol/hamrbox -a ~/demo/
+docker run --rm -v $(pwd):/working-dir -o /working-dir harrlol/hamrbox -t ~/demo/PRJNA596803_list.txt -c ~/demo/PRJNA596803_filenames.csv -g ~/path/to/genomefiles -l 50 -s 135000000
 ```
