@@ -11,5 +11,19 @@
 | --- | --- |
 | -o | \<project directory\> |
 | -t | \<SRA accession list.txt or folder of raw fastq files\> |
+| -c | \<filenames for each fastq.csv\>|
 | -g | \<reference genome directory\> |
-| -a | \[use TopHat2 instead of STAR\]
+| -l | \<read length\> |
+| -s | \<genome size in bp \> |
+| -a | \[use TopHat2 instead of STAR\]|
+| -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand\]|
+| -A | \[use TopHat2 instead of STAR\]|
+| -f | \[filter\]|
+| -Q | \[HAMR: minimum qualuty score, default=30\]|
+| -C | \[HAMR: minimum coveragem default=50\]|
+| -E | \[HAMR: sequencing error, default=0.01\]|
+| -P | \[HAMR: maximum p-value, default=1\]|
+| -F | \[HAMR: maximum fdr, default=0.05\]|
+| -m | \[HAMR model\]|
+| -n | \[number of threads\]|
+| -h | \[help message\]|
