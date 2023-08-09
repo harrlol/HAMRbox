@@ -6,3 +6,10 @@
 
 
 ## Command Line Arguments and Description
+
+| Command | Description |
+| --- | --- |
+| -o | \<project directory\> |
+| -t | \<SRA accession list.txt or folder of raw fastq files\> |
+| -g | \<reference genome directory\> |
+| -a | \[use TopHat2 instead of STAR\]
