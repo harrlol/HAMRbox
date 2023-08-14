@@ -1,6 +1,6 @@
 FROM ubuntu:18.04
 
-LABEL This Dockerfile is for hamrbox. It is maintained by Harry Li <harrli02@sas.upenn.edu>
+LABEL This Dockerfile is for hamrbox. It is maintained by Harry Li <harrli02@sas.upenn.edu> & Chosen Obih <chosenobih@arizona.edu>
 ENV DEBIAN_FRONTEND=noninteractive
 
 USER root
@@ -14,7 +14,6 @@ RUN apt-get update && apt-get install -y g++ \
 		libssl-dev \
 		libncurses5-dev \
 		libsodium-dev \
-		libmariadb-client-lgpl-dev \
 		libbz2-dev \
 		liblzma-dev \
 		libssl-dev \
@@ -25,11 +24,9 @@ RUN apt-get update && apt-get install -y g++ \
 		lbzip2 \
 		unzip \
 		bzip2 \
-		python-pip \
-		python-matplotlib \
-		python-numpy \
-       	python-pandas \
-		tzdata \ 
+		python3.6-dev \
+                python3-pip \
+		tzdata \
 		perl \
 		wget \
 		bcftools \
@@ -41,7 +38,7 @@ ENV LANG='en_US.UTF-8' LANGUAGE='en_US:en' LC_ALL='en_US.UTF-8'
 
 # Downlaod and install conda
 RUN echo 'export PATH=/opt/conda/bin:$PATH' > /etc/profile.d/conda.sh && \
-    wget --quiet https://repo.anaconda.com/miniconda/Miniconda2-py27_4.8.3-Linux-x86_64.sh -O ~/miniconda.sh && \
+    wget --quiet https://repo.anaconda.com/miniconda/Miniconda3-py310_23.5.2-0-Linux-x86_64.sh -O ~/miniconda.sh && \
     /bin/bash ~/miniconda.sh -b -p /opt/conda && \
     rm ~/miniconda.sh
 ENV PATH /opt/conda/bin:$PATH
@@ -69,15 +66,15 @@ RUN apt-get -y install ca-certificates software-properties-common gnupg2 gnupg1 
 	Rscript -e 'install.packages("openssl", dependencies = TRUE,  repos="http://cran.rstudio.com/")' && \
 	Rscript -e 'install.packages("splitstackshape", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
 	Rscript -e 'install.packages("dplyr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("tidyr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("data.table", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("ggplot2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("janitor", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("pheatmap", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("readr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("reshape2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("stringr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    Rscript -e 'install.packages("viridislite", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+	Rscript -e 'install.packages("tidyr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("data.table", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("ggplot2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("janitor", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("pheatmap", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("readr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("reshape2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("stringr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    	Rscript -e 'install.packages("viridislite", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
 	Rscript -e 'if (!requireNamespace("BiocManager", quietly = TRUE)){install.packages("BiocManager")};' && \
 	Rscript -e 'BiocManager::install(c("Biostrings"));' && \
 	Rscript -e 'install.packages("getopt", dependencies = TRUE, repos="http://cran.rstudio.com/");'
@@ -101,6 +98,11 @@ WORKDIR /
 RUN wget https://github.com/broadinstitute/gatk/releases/download/4.3.0.0/gatk-4.3.0.0.zip && \
 	unzip gatk-4.3.0.0.zip && rm gatk-4.3.0.0.zip
 ENV PATH="/gatk-4.3.0.0:${PATH}"
+
+# pip3
+RUN apt-get update
+RUN apt-get install -y libgdal-dev
+RUN pip3 install --upgrade pip
 
 # panther
 RUN git clone https://github.com/pantherdb/pantherapi-pyclient.git && \
