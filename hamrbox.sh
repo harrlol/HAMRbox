@@ -13,16 +13,25 @@ cat <<'EOF'
   
   ######################################### COMMAND LINE OPTIONS #############################
   REQUIRED:
-  -o <project directory>
-  -t <SRA accession list txt file>
-  -c <filename table csv file>
-  -g <reference genome directory>
-  -a <tophat>
-  -l <read length>
-  -s <genome length in basepair>
-  -r <repo location for some softwares>
-  -f <filter>
-  -m <hamr model>
+    -o	<project directory>
+    -t	<SRA accession list.txt or folder of raw fastq files>
+    -c	<filenames for each fastq.csv>
+    -g	<reference genome.fa>
+    -i  <reference genome annotation.gff3>
+    -l	<read length>
+    -s	<genome size in bp >
+    -a	[use TopHat2 instead of STAR]
+    -b	[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand]
+    -f	[filter]
+    -e	[genome annotation generator]
+    -Q	[HAMR: minimum qualuty score, default=30]
+    -C	[HAMR: minimum coveragem default=50]
+    -E	[HAMR: sequencing error, default=0.01]
+    -P	[HAMR: maximum p-value, default=1]
+    -F	[HAMR: maximum fdr, default=0.05]
+    -m	[HAMR model]
+    -n	[number of threads]
+    -h	[help message] 
   
 
   OPTIONAL: 
@@ -34,6 +43,7 @@ EOF
     exit 0
 }
 
+curdir=$(dirname $0)
 threads=4
 tophat=false
 quality=30
@@ -42,9 +52,11 @@ err=0.01
 pvalue=1
 fdr=0.05
 tophatlib="fr-firststrand"
+filter=$curdir/filter_SAM_number_hits.pl
+model=$curdir/euk_trna_mods.Rdata
 
 #############Grabbing arguments############
-while getopts ":o:t:c:g:l:s:r:f:m:n:hQCabEPF:" opt; do
+while getopts ":o:t:c:g:i:l:e:s:A:r:f:m:n:hQCabEPF:" opt; do
   case $opt in
     o)
     out=$OPTARG # project output directory root
@@ -56,11 +68,17 @@ while getopts ":o:t:c:g:l:s:r:f:m:n:hQCabEPF:" opt; do
     csv=$OPTARG # SRR to filename table
      ;;
     g)
-    genomedir=$OPTARG # reference genome directory
+    genome=$OPTARG # reference genome directory
+     ;;
+    i)
+    annotation=$OPTARG # reference genome annotation
      ;;
     l)
     length+=$OPTARG 
      ;;
+    e)
+    generator=$OPTARG
+    ;;
     s)
     genomelength=$OPTARG 
      ;;
@@ -692,22 +710,8 @@ if [ ! -e "$out/hamr_out/zero_mod.txt" ]; then
     cd
 fi
 
-# Check and assign genome and gtf files
-count=`ls -1 $genomedir/*.fa 2>/dev/null | wc -l`
-if [ $count != 0 ]; then 
-  genome=$(find $genomedir -maxdepth 1 -name "*.fa")
-else
-  echo "No genome fasta file found, please check your genome directory."
-  exit 1
-fi
-
-count=`ls -1 $genomedir/*.gff3 2>/dev/null | wc -l`
-if [ $count != 0 ]; then 
-  annotation=$(find $genomedir -maxdepth 1 -name "*.gff3")
-else
-  echo "No genome gff3 file found, please check your genome directory."
-  exit 1
-fi
+# Get genome directory
+genomedir=$(dirname $genome)
 
 # create dict file using fasta genome file
 count=`ls -1 $genomedir/*.dict 2>/dev/null | wc -l`
@@ -789,7 +793,7 @@ echo ""
 
 #############fastq2hamr main ends###############
 
-curdir=$(dirname $0)
+
 echo "Producing consensus file across biological replicates..."
 # Find consensus accross all reps of a given sample group
 Rscript $curdir/findConsensus.R \
@@ -868,6 +872,22 @@ if ! command -v intersectBed > /dev/null; then
     exit 1
 fi
 
+# checks if genomedir is populated with generated annotation files, if not, hamrbox can't run anymore, exit
+count=`ls -1 $genomedir/*.bed 2>/dev/null | wc -l`
+  if [ $count == 0 ]; then 
+    if [[ ! -z "$generator" ]]; then
+        echo "generating annotations for overlap..."
+        Rscript $generator $annotation
+    else
+        echo "#########NOTICE###########"
+        echo "##########No annotation generator or annotation files found, please check your supplied arguments##########"
+        echo "##########As a result, HAMRbox will stop here. Please provide the above files in the next run############"
+        exit 1
+    fi
+  else 
+    echo "generated annotation detected, proceeding to overlapping"
+  fi
+
 # Overlap with provided libraries for each sample group
 for smp in $out/consensus/*
 do consensusOverlap
@@ -918,12 +938,6 @@ echo ""
 #     echo "known modification file not detected, skipping relative positional analysis"
 #     echo ""
 # fi
-
-gff=$(find $genomedir -maxdepth 1 -name "*_gene*")
-if [ -z "$gff" ]; then
-    echo "gff3 annotation file not found"
-    exit 1
-fi
 
 echo "classifying modified RNA subtype..."
 # looking at RNA subtype for mods
