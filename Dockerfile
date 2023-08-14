@@ -26,6 +26,7 @@ RUN apt-get update && apt-get install -y g++ \
 		bzip2 \
 		python3.6-dev \
                 python3-pip \
+                apt-utils \
 		tzdata \
 		perl \
 		wget \
@@ -81,6 +82,7 @@ RUN apt-get -y install ca-certificates software-properties-common gnupg2 gnupg1 
 	Rscript -e 'install.packages("getopt", dependencies = TRUE, repos="http://cran.rstudio.com/");'
 
 ## HAMR (now working under Python 3)
+ENV BINPATH /usr/bin
 RUN git clone https://github.com/harrlol/HAMR && \
 	chmod +x /HAMR/hamr.py && cp /HAMR/hamr.py $BINPATH && \
 	cp -R /HAMR/models /usr/bin/hamr_models
@@ -104,6 +106,7 @@ ENV PATH="/gatk-4.3.0.0:${PATH}"
 RUN apt-get update
 RUN apt-get install -y libgdal-dev
 RUN pip3 install --upgrade pip
+RUN apt-get install python3-venv -y
 
 # panther
 RUN git clone https://github.com/pantherdb/pantherapi-pyclient.git && \
