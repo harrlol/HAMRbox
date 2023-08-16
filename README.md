@@ -9,6 +9,7 @@
 
 | Command | Description |
 | --- | --- |
+| Required |
 | -o | \<project directory\> |
 | -t | \<SRA accession list.txt or folder of raw fastq files\> |
 | -c | \<filenames for each fastq.csv\>|
@@ -16,7 +17,7 @@
 | -i | \<reference genome annotation.gff3> |
 | -l | \<read length\> |
 | -s | \<genome size in bp \> |
-| --- | --- |
+| Optional |
 | -a | \[use TopHat2 instead of STAR\]|
 | -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand\]|
 | -f | \[filter\]|
