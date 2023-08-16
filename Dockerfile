@@ -77,8 +77,6 @@ RUN apt-get -y install ca-certificates software-properties-common gnupg2 gnupg1 
     	Rscript -e 'install.packages("reshape2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
     	Rscript -e 'install.packages("stringr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
     	Rscript -e 'install.packages("viridislite", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-	Rscript -e 'if (!requireNamespace("BiocManager", quietly = TRUE)){install.packages("BiocManager")};' && \
-	Rscript -e 'BiocManager::install(c("Biostrings"));' && \
 	Rscript -e 'install.packages("getopt", dependencies = TRUE, repos="http://cran.rstudio.com/");'
 
 ## HAMR (now working under Python 3)
