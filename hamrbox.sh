@@ -200,304 +200,301 @@ fqgrab2 () {
     fastqc $dumpout/trimmed/$tt"_trimmed.fq" -o $dumpout/fastqc_results
 }
 
-# function fastq2hamr {
-    # # Running checks to ensure program can run normally
-    # hamr=""
+fastq2hamr () {
+    # Running checks to ensure program can run normally
+    hamr=""
 
-    # # Grab command from repo where needed
-    # shopt -s nocaseglob
+    # Grab command from repo where needed
+    shopt -s nocaseglob
 
-    # for folder in "$repo"/*; do
-    #     # Check if the folder name contains the string "hamr_py3" (case unsensitive)
-    #     if [[ "${folder,,}" == *hamr_py3* ]]; then
-    #         hamr="$folder"
-    #     fi
-    # done
+    for folder in "$repo"/*; do
+        # Check if the folder name contains the string "hamr_py3" (case unsensitive)
+        if [[ "${folder,,}" == *hamr_py3* ]]; then
+            hamr="$folder"
+        fi
+    done
 
-    # shopt -u nocaseglob
+    shopt -u nocaseglob
 
-    # if [ ! -n "$hamr" ]; then
-    #     echo "HAMR not installed, please check."
-    #     exit 1
-    # fi
+    if [ ! -n "$hamr" ]; then
+        echo "HAMR not installed, please check."
+        exit 1
+    fi
 
+    smpext=$(basename "$smp")
+    smpdir=$(dirname "$smp")
+    smpkey="${smpext%.*}"
+    smpname=""
+    original_ext="${smpext##*.}"
 
-    # smpext=$(basename "$smp")
-    # smpdir=$(dirname "$smp")
-    # smpkey="${smpext%.*}"
-    # smpname=""
-    # original_ext="${smpext##*.}"
+    if [[ $smpkey == *_1* ]]; then
+        smpkey="${smpkey%_1*}"
+        smp1="$smpdir/${smpkey}_1_trimmed.$original_ext"
+        smp2="$smpdir/${smpkey}_2_trimmed.$original_ext"
+        # Paired end recognized
+        det=0
+        echo "$smpext is a part of a paired-end sequencing file"
+    elif [[ $smpkey == *_2* ]]; then
+        # If _2 is in the filename, this file was processed along with its corresponding _1 so we skip
+        echo "$smpext has already been processed with its _1 counter part. Skipped."
+        echo ""
+        exit 1
+    else
+        det=1
+        echo "$smpext is a single-end sequencing file"
+        echo ""
+    fi
 
-    # if [[ $smpkey == *_1* ]]; then
-    #     smpkey="${smpkey%_1*}"
-    #     smp1="$smpdir/${smpkey}_1_trimmed.$original_ext"
-    #     smp2="$smpdir/${smpkey}_2_trimmed.$original_ext"
-    #     # Paired end recognized
-    #     det=0
-    #     echo "$smpext is a part of a paired-end sequencing file"
-    # elif [[ $smpkey == *_2* ]]; then
-    #     # If _2 is in the filename, this file was processed along with its corresponding _1 so we skip
-    #     echo "$smpext has already been processed with its _1 counter part. Skipped."
-    #     echo ""
-    #     exit 1
-    # else
-    #     det=1
-    #     echo "$smpext is a single-end sequencing file"
-    #     echo ""
-    # fi
+    # Read the CSV file into a DataFrame
+    mapfile -t names < <(awk -F, '{ print $1 }' "$csv")
+    mapfile -t smpf < <(awk -F, '{ print $2 }' "$csv")
 
-    # # Read the CSV file into a DataFrame
-    # mapfile -t names < <(awk -F, '{ print $1 }' "$csv")
-    # mapfile -t smpf < <(awk -F, '{ print $2 }' "$csv")
+    # Create a dictionary from the DataFrame
+    declare -A dictionary
+    for ((i=0; i<${#names[@]}; i++)); do
+        dictionary[${names[i]}]=${smpf[i]}
+    done
 
-    # # Create a dictionary from the DataFrame
-    # declare -A dictionary
-    # for ((i=0; i<${#names[@]}; i++)); do
-    #     dictionary[${names[i]}]=${smpf[i]}
-    # done
+    if [[ $smpkey == *_trimmed* ]]; then
+        smpkey="${smpkey%_trimmed*}"
+    fi
 
-    # if [[ $smpkey == *_trimmed* ]]; then
-    #     smpkey="${smpkey%_trimmed*}"
-    # fi
+    # Retrieve the translated value
+    if [[ ${dictionary[$smpkey]+_} ]]; then
+        smpname="${dictionary[$smpkey]}"
+        smpname="${smpname//$'\r'}"
+        echo "[$smpkey] Sample group name found: $smpname"
+    else
+        echo "[$smpkey] Could not locate sample group name, exiting..."
+        exit 1
+    fi
 
-    # # Retrieve the translated value
-    # if [[ ${dictionary[$smpkey]+_} ]]; then
-    #     smpname="${dictionary[$smpkey]}"
-    #     smpname="${smpname//$'\r'}"
-    #     echo "[$smpkey] Sample group name found: $smpname"
-    # else
-    #     echo "[$smpkey] Could not locate sample group name, exiting..."
-    #     exit 1
-    # fi
+    # Reassign / declare pipeline file directory
+    if [ ! -d "$out/pipeline/$smpkey""_temp" ] 
+    then
+        mkdir "$out/pipeline/$smpkey""_temp"
+        echo "[$smpkey] created path: $out/pipeline/$smpkey""_temp"
+    fi
 
-    # # Reassign / declare pipeline file directory
-    # if [ ! -d "$out/pipeline/$smpkey""_temp" ] 
-    # then
-    #     mkdir "$out/pipeline/$smpkey""_temp"
-    #     echo "[$smpkey] created path: $out/pipeline/$smpkey""_temp"
-    # fi
-
-    # smpout=$out/pipeline/$smpkey"_temp"
-    # echo "[$smpkey] You can find all the intermediate files for $smpkey at $smpout" 
-
-
-    # # Reassign hamr output directory
-    # if [ ! -d "$out/hamr_out" ] 
-    # then
-    #     mkdir $out/hamr_out
-    #     echo "created path: $out/hamr_out"
-    # fi
-
-    # hamrout=$out/hamr_out
-    # echo "[$smpkey] You can find the HAMR output file for $smpkey at $hamrout/$smpname.mod.txt" 
+    smpout=$out/pipeline/$smpkey"_temp"
+    echo "[$smpkey] You can find all the intermediate files for $smpkey at $smpout" 
 
 
-    # echo "[$smpkey] Begin HAMR pipeline"
-    # cd $smpout
-    # # maps the trimmed reads to provided annotated genome, can take ~1.5hr
+    # Reassign hamr output directory
+    if [ ! -d "$out/hamr_out" ] 
+    then
+        mkdir $out/hamr_out
+        echo "created path: $out/hamr_out"
+    fi
 
-    # if [[ "$tophat" = false ]]; then  
-    #     echo "Using STAR for mapping..."
-    #     # Check if indexed files already present for STAR
-    #     if [ -e "$out/ref/SAindex" ]; then
-    #         echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
-    #     else
-    #     # If not, first check if ref folder is present, if not then make
-    #         if [ ! -d "$out/ref" ]; then mkdir "$out/ref"; echo "created path: $out/ref"; fi
+    hamrout=$out/hamr_out
+    echo "[$smpkey] You can find the HAMR output file for $smpkey at $hamrout/$smpname.mod.txt" 
 
-    #         # Now, do the indexing step
-    #         # Define the SA index number argument
-    #         log_result=$(echo "scale=2; l($genomelength)/l(2)/2 - 1" | bc -l)
-    #         sain=$(echo "scale=0; if ($log_result < 14) $log_result else 14" | bc)
 
-    #         # Create genome index 
-    #         STAR \
-    #             --runThreadN $threads \
-    #             --runMode genomeGenerate \
-    #             --genomeDir $out/ref \
-    #             --genomeFastaFiles $genome \
-    #             --sjdbGTFfile $annotation \
-    #             --sjdbGTFtagExonParentTranscript Parent \
-    #             --sjdbOverhang $overhang \
-    #             --genomeSAindexNbases $sain
-    #     fi
+    echo "[$smpkey] Begin HAMR pipeline"
+    cd $smpout
+    # maps the trimmed reads to provided annotated genome, can take ~1.5hr
 
-    #     if [ "$det" -eq 1 ]; then
-    #     echo "[$smpkey] Performing STAR with a single-end file."
-    #     STAR \
-    #     --runThreadN 2 \
-    #     --genomeDir $out/ref \
-    #     --readFilesIn $smp \
-    #     --sjdbOverhang $overhang \
-    #     --sjdbGTFfile $annotation \
-    #     --sjdbGTFtagExonParentTranscript Parent \
-    #     --outFilterMultimapNmax 10 \
-    #     --outFilterMismatchNmax $mismatch \
-    #     --outSAMtype BAM SortedByCoordinate
-    #     else
-    #     echo "[$smpkey] Performing STAR with a paired-end file."
-    #     STAR \
-    #     --runThreadN 2 \
-    #     --genomeDir $out/ref \
-    #     --readFilesIn $smp1 $smp2 \
-    #     --sjdbOverhang $overhang \
-    #     --sjdbGTFfile $annotation \
-    #     --sjdbGTFtagExonParentTranscript Parent \
-    #     --outFilterMultimapNmax 10 \
-    #     --outFilterMismatchNmax $mismatch \
-    #     --outSAMtype BAM SortedByCoordinate
-    #     fi
+    if [[ "$tophat" = false ]]; then  
+        echo "Using STAR for mapping..."
+        # Check if indexed files already present for STAR
+        if [ -e "$out/ref/SAindex" ]; then
+            echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
+        else
+        # If not, first check if ref folder is present, if not then make
+            if [ ! -d "$out/ref" ]; then mkdir "$out/ref"; echo "created path: $out/ref"; fi
 
-    # else
-    #     echo "Using TopHat2 for mapping..."
-    #     # Check if indexed files already present for STAR
-    #     if [ -e "$out/btref" ]; then
-    #         echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
-    #     else
-    #     # If not, first check if ref folder is present, if not then make
-    #         if [ ! -d "$out/btref" ]; then mkdir "$out/btref"; echo "created path: $out/btref"; fi
+            # Now, do the indexing step
+            # Define the SA index number argument
+            log_result=$(echo "scale=2; l($genomelength)/l(2)/2 - 1" | bc -l)
+            sain=$(echo "scale=0; if ($log_result < 14) $log_result else 14" | bc)
 
-    #         echo "Creating Bowtie references..."
-    #         bowtie2-build $genome $out/btref
+            # Create genome index 
+            STAR \
+                --runThreadN $threads \
+                --runMode genomeGenerate \
+                --genomeDir $out/ref \
+                --genomeFastaFiles $genome \
+                --sjdbGTFfile $annotation \
+                --sjdbGTFtagExonParentTranscript Parent \
+                --sjdbOverhang $overhang \
+                --genomeSAindexNbases $sain
+        fi
 
-    #     # set read distabce based on mistmatch num
-    #     red=8
-    #     if (($mismatch > 8)); then
-    #     red=$((mismatch +1))
-    #     fi
+        if [ "$det" -eq 1 ]; then
+            echo "[$smpkey] Performing STAR with a single-end file."
+            STAR \
+            --runThreadN 2 \
+            --genomeDir $out/ref \
+            --readFilesIn $smp \
+            --sjdbOverhang $overhang \
+            --sjdbGTFfile $annotation \
+            --sjdbGTFtagExonParentTranscript Parent \
+            --outFilterMultimapNmax 10 \
+            --outFilterMismatchNmax $mismatch \
+            --outSAMtype BAM SortedByCoordinate
+        else
+            echo "[$smpkey] Performing STAR with a paired-end file."
+            STAR \
+            --runThreadN 2 \
+            --genomeDir $out/ref \
+            --readFilesIn $smp1 $smp2 \
+            --sjdbOverhang $overhang \
+            --sjdbGTFfile $annotation \
+            --sjdbGTFtagExonParentTranscript Parent \
+            --outFilterMultimapNmax 10 \
+            --outFilterMismatchNmax $mismatch \
+            --outSAMtype BAM SortedByCoordinate
+        fi
 
-    #     if [ "$det" -eq 1 ]; then
-    #     echo "[$smpkey] Performing TopHat2 with a single-end file."
-    #     tophat2 \
-    #         --library-type $tophatlib \
-    #         --read-mismatches $mismatch \
-    #         --read-edit-dist $red \
-    #         --max-multihits 10 \
-    #         --b2-very-sensitive \
-    #         --transcriptome-max-hits 10 \
-    #         --no-coverage-search \
-    #         -G $annotation \
-    #         -p $threads \
-    #         $out/btref \
-    #         $smp
-    #     else
-    #     echo "[$smpkey] Performing TopHat2 with a paired-end file."
-    #     tophat2 \
-    #         --library-type $tophatlib \
-    #         --read-mismatches $mismatch \
-    #         --read-edit-dist $red \
-    #         --max-multihits 10 \
-    #         --b2-very-sensitive \
-    #         --transcriptome-max-hits 10 \
-    #         --no-coverage-search \
-    #         -G $annotation \
-    #         -p $threads \
-    #         $out/btref \
-    #         $smp1 $smp2
-    #     fi
-    
-    # cd
+    else
+        echo "Using TopHat2 for mapping..."
+        # Check if indexed files already present for STAR
+        if [ -e "$out/btref" ]; then
+            echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
+        else
+        # If not, first check if ref folder is present, if not then make
+            if [ ! -d "$out/btref" ]; then mkdir "$out/btref"; echo "created path: $out/btref"; fi
 
-    # wait
+            echo "Creating Bowtie references..."
+            bowtie2-build $genome $out/btref
 
-    # #sorts the accepted hits
-    # echo "[$smpkey] sorting..."
-    # samtools sort \
-    #     -n $smpout/Aligned.sortedByCoord.out.bam \
-    #     -o $smpout/sort_accepted.bam
-    # echo "[$smpkey] finished sorting"
-    # echo ""
+        # set read distabce based on mistmatch num
+        red=8
+        if (($mismatch > 8)); then
+        red=$((mismatch +1))
+        fi
 
-    # wait
+        if [ "$det" -eq 1 ]; then
+        echo "[$smpkey] Performing TopHat2 with a single-end file."
+        tophat2 \
+            --library-type $tophatlib \
+            --read-mismatches $mismatch \
+            --read-edit-dist $red \
+            --max-multihits 10 \
+            --b2-very-sensitive \
+            --transcriptome-max-hits 10 \
+            --no-coverage-search \
+            -G $annotation \
+            -p $threads \
+            $out/btref \
+            $smp
+        else
+        echo "[$smpkey] Performing TopHat2 with a paired-end file."
+        tophat2 \
+            --library-type $tophatlib \
+            --read-mismatches $mismatch \
+            --read-edit-dist $red \
+            --max-multihits 10 \
+            --b2-very-sensitive \
+            --transcriptome-max-hits 10 \
+            --no-coverage-search \
+            -G $annotation \
+            -p $threads \
+            $out/btref \
+            $smp1 $smp2
+        fi
+    cd
 
-    # #filter the accepted hits by uniqueness
-    # echo "[$smpkey] filter unique..."
-    # samtools view \
-    #     -h $smpout/sort_accepted.bam \
-    #     | perl $filter 1 \
-    #     | samtools view -bS - \
-    #     | samtools sort \
-    #     -o $smpout/unique.bam
-    # echo "[$smpkey] finished filtering"
-    # echo ""
+    wait
 
-    # wait
+    #sorts the accepted hits
+    echo "[$smpkey] sorting..."
+    samtools sort \
+        -n $smpout/Aligned.sortedByCoord.out.bam \
+        -o $smpout/sort_accepted.bam
+    echo "[$smpkey] finished sorting"
+    echo ""
 
-    # #adds read groups using picard, note the RG arguments are disregarded here
-    # echo "[$smpkey] adding/replacing read groups..."
-    # gatk AddOrReplaceReadGroups \
-    #     I=$smpout/unique.bam \
-    #     O=$smpout/unique_RG.bam \
-    #     RGID=1 \
-    #     RGLB=xxx \
-    #     RGPL=illumina_100se \
-    #     RGPU=HWI-ST1395:97:d29b4acxx:8 \
-    #     RGSM=sample
-    # echo "[$smpkey] finished adding/replacing read groups"
-    # echo ""
+    wait
 
-    # wait
+    #filter the accepted hits by uniqueness
+    echo "[$smpkey] filter unique..."
+    samtools view \
+        -h $smpout/sort_accepted.bam \
+        | perl $filter 1 \
+        | samtools view -bS - \
+        | samtools sort \
+        -o $smpout/unique.bam
+    echo "[$smpkey] finished filtering"
+    echo ""
 
-    # #reorder the reads using picard
-    # echo "[$smpkey] reordering..."
-    # echo "$genome"
-    # gatk --java-options "-Xmx2g -Djava.io.tmpdir=$smpout/tmp" ReorderSam \
-    #     I=$smpout/unique_RG.bam \
-    #     O=$smpout/unique_RG_ordered.bam \
-    #     R=$genome \
-    #     CREATE_INDEX=TRUE \
-    #     SEQUENCE_DICTIONARY=$dict \
-    #     TMP_DIR=$smpout/tmp
-    # echo "[$smpkey] finished reordering"
-    # echo ""
+    wait
 
-    # wait
+    #adds read groups using picard, note the RG arguments are disregarded here
+    echo "[$smpkey] adding/replacing read groups..."
+    gatk AddOrReplaceReadGroups \
+        I=$smpout/unique.bam \
+        O=$smpout/unique_RG.bam \
+        RGID=1 \
+        RGLB=xxx \
+        RGPL=illumina_100se \
+        RGPU=HWI-ST1395:97:d29b4acxx:8 \
+        RGSM=sample
+    echo "[$smpkey] finished adding/replacing read groups"
+    echo ""
 
-    # #splitting and cigarring the reads, using genome analysis tool kit
-    # #note can alter arguments to allow cigar reads 
-    # echo "[$smpkey] getting split and cigar reads..."
-    # gatk --java-options "-Xmx2g -Djava.io.tmpdir=$smpout/tmp" SplitNCigarReads \
-    #     -R $genome \
-    #     -I $smpout/unique_RG_ordered.bam \
-    #     -O $smpout/unique_RG_ordered_splitN.bam
-    #     # -U ALLOW_N_CIGAR_READS
-    # echo "[$smpkey] finished splitting N cigarring"
-    # echo ""
+    wait
 
-    # wait
+    #reorder the reads using picard
+    echo "[$smpkey] reordering..."
+    echo "$genome"
+    gatk --java-options "-Xmx2g -Djava.io.tmpdir=$smpout/tmp" ReorderSam \
+        I=$smpout/unique_RG.bam \
+        O=$smpout/unique_RG_ordered.bam \
+        R=$genome \
+        CREATE_INDEX=TRUE \
+        SEQUENCE_DICTIONARY=$dict \
+        TMP_DIR=$smpout/tmp
+    echo "[$smpkey] finished reordering"
+    echo ""
 
-    # #final resorting using picard
-    # echo "[$smpkey] resorting..."
-    # gatk --java-options "-Xmx2g -Djava.io.tmpdir=$smpout/tmp" SortSam \
-    #     I=$smpout/unique_RG_ordered_splitN.bam \
-    #     O=$smpout/unique_RG_ordered_splitN.resort.bam \
-    #     SORT_ORDER=coordinate
-    # echo "[$smpkey] finished resorting"
-    # echo ""
+    wait
 
-    # wait
+    #splitting and cigarring the reads, using genome analysis tool kit
+    #note can alter arguments to allow cigar reads 
+    echo "[$smpkey] getting split and cigar reads..."
+    gatk --java-options "-Xmx2g -Djava.io.tmpdir=$smpout/tmp" SplitNCigarReads \
+        -R $genome \
+        -I $smpout/unique_RG_ordered.bam \
+        -O $smpout/unique_RG_ordered_splitN.bam
+        # -U ALLOW_N_CIGAR_READS
+    echo "[$smpkey] finished splitting N cigarring"
+    echo ""
 
-    # #hamr step, can take ~1hr
-    # echo "[$smpkey] hamr..."
-    # python $hamr/hamr.py \
-    #     -fe $smpout/unique_RG_ordered_splitN.resort.bam $genome $model $smpout $smpname $quality $coverage $err H4 $pvalue $fdr .05
+    wait
 
-    # wait
+    #final resorting using picard
+    echo "[$smpkey] resorting..."
+    gatk --java-options "-Xmx2g -Djava.io.tmpdir=$smpout/tmp" SortSam \
+        I=$smpout/unique_RG_ordered_splitN.bam \
+        O=$smpout/unique_RG_ordered_splitN.resort.bam \
+        SORT_ORDER=coordinate
+    echo "[$smpkey] finished resorting"
+    echo ""
 
-    # if [ ! -e "$smpout/${smpname}.mods.txt" ]
-    # then 
-    #     cd $hamrout
-    #     printf "${smpname} \n" >> zero_mod.txt
-    #     cd
-    # else
-    # # HAMR needs separate folders to store temp for each sample, so we move at the end
-    #     cp $smpout/${smpname}.mods.txt $hamrout
-    # fi
+    wait
 
-    # # Move the unique_RG_ordered.bam and unique_RG_ordered.bai to a folder for read depth analysis
-    # cp $smpout/unique_RG_ordered.bam $out/pipeline/depth/$smpname.bam
-    # cp $smpout/unique_RG_ordered.bai $out/pipeline/depth/$smpname.bai
-# }
+    #hamr step, can take ~1hr
+    echo "[$smpkey] hamr..."
+    python $hamr/hamr.py \
+        -fe $smpout/unique_RG_ordered_splitN.resort.bam $genome $model $smpout $smpname $quality $coverage $err H4 $pvalue $fdr .05
+    wait
+
+    if [ ! -e "$smpout/${smpname}.mods.txt" ]
+    then 
+        cd $hamrout
+        printf "${smpname} \n" >> zero_mod.txt
+        cd
+    else
+    # HAMR needs separate folders to store temp for each sample, so we move at the end
+        cp $smpout/${smpname}.mods.txt $hamrout
+    fi
+
+    # Move the unique_RG_ordered.bam and unique_RG_ordered.bai to a folder for read depth analysis
+    cp $smpout/unique_RG_ordered.bam $out/pipeline/depth/$smpname.bam
+    cp $smpout/unique_RG_ordered.bai $out/pipeline/depth/$smpname.bai
+}
 
 consensusOverlap () {
     IFS="/" read -ra sections <<< "$smp"
