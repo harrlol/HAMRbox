@@ -200,7 +200,7 @@ fqgrab2 () {
     fastqc $dumpout/trimmed/$tt"_trimmed.fq" -o $dumpout/fastqc_results
 }
 
-function fastq2hamr {
+# function fastq2hamr {
     # # Running checks to ensure program can run normally
     # hamr=""
 
@@ -497,7 +497,7 @@ function fastq2hamr {
     # # Move the unique_RG_ordered.bam and unique_RG_ordered.bai to a folder for read depth analysis
     # cp $smpout/unique_RG_ordered.bam $out/pipeline/depth/$smpname.bam
     # cp $smpout/unique_RG_ordered.bai $out/pipeline/depth/$smpname.bai
-}
+# }
 
 consensusOverlap () {
     IFS="/" read -ra sections <<< "$smp"
