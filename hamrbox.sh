@@ -596,7 +596,6 @@ echo ""
 
 mismatch=$(($length*6/100))
 overhang=$(($mismatch-1))
-export PATH="$repo/gatk-4.3.0.0/:$PATH"
 
 ##########fqgrab housekeeping begins#########
 if [ ! -d "$out" ]; then mkdir $out; echo "created path: $out"; fi
