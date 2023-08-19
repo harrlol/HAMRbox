@@ -20,13 +20,13 @@ cat <<'EOF'
     -i  <reference genome annotation.gff3>
     -l	<read length>
     -s	<genome size in bp >
+    -e	<genome annotation generator>
 
   OPTIONAL: 
     -n  number of threads (default 4)
     -a	[use TopHat2 instead of STAR]
     -b	[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand]
     -f	[filter]
-    -e	[genome annotation generator]
     -Q	[HAMR: minimum qualuty score, default=30]
     -C	[HAMR: minimum coveragem default=50]
     -E	[HAMR: sequencing error, default=0.01]
@@ -53,9 +53,10 @@ fdr=0.05
 tophatlib="fr-firststrand"
 filter=$curdir/filter_SAM_number_hits.pl
 model=$curdir/euk_trna_mods.Rdata
+generator=""
 
 #############Grabbing arguments############
-while getopts ":o:t:c:g:i:l:e:s:A:r:f:m:n:hQCabEPF:" opt; do
+while getopts ":o:t:c:g:i:l:e:s:A:f:m:n:hQCabEPF:" opt; do
   case $opt in
     o)
     out=$OPTARG # project output directory root
@@ -73,16 +74,13 @@ while getopts ":o:t:c:g:i:l:e:s:A:r:f:m:n:hQCabEPF:" opt; do
     annotation=$OPTARG # reference genome annotation
      ;;
     l)
-    length+=$OPTARG 
+    length+=$OPTARG # read length 
      ;;
     e)
-    generator=$OPTARG
+    generator=$OPTARG # organism abbreviation for annotationGenerate
     ;;
     s)
-    genomelength=$OPTARG 
-     ;;
-    r)
-    repo=$OPTARG
+    genomelength=$OPTARG # length or size of the genome
      ;;
     f)
     filter=$OPTARG
@@ -129,6 +127,31 @@ while getopts ":o:t:c:g:i:l:e:s:A:r:f:m:n:hQCabEPF:" opt; do
   esac
 done
 
+# Assigning the appropriate annotationGenerate.R 
+if [[ $generator == "AT" ]]; then
+    generator="/annotationGenerate/annotationGenerateAT.R"
+    echo "Model organism detected: Arabidopsis thaliana"
+elif [[ $generator == "BD" ]]; then
+    generator="/annotationGenerate/annotationGenerateBD.R"
+    echo "Model organism detected: Brachypodium distachyon"
+elif [[ $generator == "ZM" ]]; then
+    generator="/annotationGenerate/annotationGenerateZM.R"
+    echo "Model organism detected: Zea mays"
+elif [[ $generator == "OSJ" ]]; then
+    generator="/annotationGenerate/annotationGenerateOSJ.R"
+    echo "Model organism detected: Oryza sativa japonica"
+elif [[ $generator == "OSI" ]]; then
+    generator="/annotationGenerate/annotationGenerateOSI.R"
+    echo "Model organism detected: Oryza sativa indica"
+elif [[ $generator == "OSIR64" ]]; then
+    generator="/annotationGenerate/annotationGenerateOSIR64.R"
+    echo "Model organism detected: Oryza sativa IR64"
+else
+    echo "##################################################"
+    echo "model organism code not recognized, please check your input"
+    echo "HAMRbox will proceed with limited functionalities"
+    echo "##################################################"
+fi
 
 ######################################################### Subprogram Definition #########################################
 fqgrab () {
@@ -201,22 +224,8 @@ fqgrab2 () {
 }
 
 fastq2hamr () {
-    # Running checks to ensure program can run normally
-    hamr=""
-
-    # Grab command from repo where needed
-    shopt -s nocaseglob
-
-    for folder in "$repo"/*; do
-        # Check if the folder name contains the string "hamr_py3" (case unsensitive)
-        if [[ "${folder,,}" == *hamr_py3* ]]; then
-            hamr="$folder"
-        fi
-    done
-
-    shopt -u nocaseglob
-
-    if [ ! -n "$hamr" ]; then
+    # last check on HAMR
+    if [ ! -n "/HAMR/hamr.py" ]; then
         echo "HAMR not installed, please check."
         exit 1
     fi
@@ -295,30 +304,6 @@ fastq2hamr () {
 
     if [[ "$tophat" = false ]]; then  
         echo "Using STAR for mapping..."
-        # Check if indexed files already present for STAR
-        if [ -e "$out/ref/SAindex" ]; then
-            echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
-        else
-        # If not, first check if ref folder is present, if not then make
-            if [ ! -d "$out/ref" ]; then mkdir "$out/ref"; echo "created path: $out/ref"; fi
-
-            # Now, do the indexing step
-            # Define the SA index number argument
-            log_result=$(echo "scale=2; l($genomelength)/l(2)/2 - 1" | bc -l)
-            sain=$(echo "scale=0; if ($log_result < 14) $log_result else 14" | bc)
-
-            # Create genome index 
-            STAR \
-                --runThreadN $threads \
-                --runMode genomeGenerate \
-                --genomeDir $out/ref \
-                --genomeFastaFiles $genome \
-                --sjdbGTFfile $annotation \
-                --sjdbGTFtagExonParentTranscript Parent \
-                --sjdbOverhang $overhang \
-                --genomeSAindexNbases $sain
-        fi
-
         if [ "$det" -eq 1 ]; then
             echo "[$smpkey] Performing STAR with a single-end file."
             STAR \
@@ -347,17 +332,6 @@ fastq2hamr () {
 
     else
         echo "Using TopHat2 for mapping..."
-        # Check if indexed files already present for STAR
-        if [ -e "$out/btref" ]; then
-            echo "STAR Genome Directory with indexed genome detected, proceding to alignment..."
-        else
-        # If not, first check if ref folder is present, if not then make
-            if [ ! -d "$out/btref" ]; then mkdir "$out/btref"; echo "created path: $out/btref"; fi
-
-            echo "Creating Bowtie references..."
-            bowtie2-build $genome $out/btref
-        fi
-
         # set read distabce based on mistmatch num
         red=8
         if [[ $mismatch > 8 ]]; then red=$((mismatch +1)); fi
@@ -475,7 +449,7 @@ fastq2hamr () {
 
     #hamr step, can take ~1hr
     echo "[$smpkey] hamr..."
-    python $hamr/hamr.py \
+    python /HAMR/hamr.py \
         -fe $smpout/unique_RG_ordered_splitN.resort.bam $genome $model $smpout $smpname $quality $coverage $err H4 $pvalue $fdr .05
     wait
 
@@ -594,6 +568,32 @@ echo ""
 echo "##################################### Begin HAMRbox #################################"
 echo ""
 
+# Check if the required arguments are provided
+if [ -z "$out" ]; then 
+    echo "output directory not detected, exiting..."
+    exit 1
+elif [ -z "$acc" ]; then
+    echo "input SRR or fastq files not detected, exiting..."
+    exit 1
+elif [ -z "$csv" ]; then
+    echo "filename dictionary csv not detected, exiting..."
+    exit 1
+elif [ -z "$genome" ]; then
+    echo "model organism genmome fasta not detected, exiting..."
+    exit 1
+elif [ -z "$annotation" ]; then
+    echo "model organism genmome annotation gff3 not detected, exiting..."
+    exit 1
+elif [ -z "$length" ]; then
+    echo "read length not detected, exiting..."
+    exit 1
+elif [ -z "$genomelength" ]; then
+    echo "genome size not detected, exiting..."
+    exit 1
+else
+    echo "all required arguments provided, proceding..."
+fi
+
 mismatch=$(($length*6/100))
 overhang=$(($mismatch-1))
 
@@ -618,6 +618,23 @@ elif [[ -d $acc ]]; then
 else
     echo "Error recognizing input source, exiting..."
     exit 1
+fi
+
+# relocate user-provided inputs
+if [ ! -d "$out/ref" ]; then 
+    mkdir "$out/ref"
+    echo "created path: $out/ref"
+    cp $genome "$out/ref"
+    genome="$out/ref/$(basename $genome)"
+    cp $annotation "$out/ref"
+    annotation="$out/ref/$(basename $annotation)"
+fi
+
+if [ ! -d "$out/fileprep" ]; then 
+    mkdir "$out/fileprep"
+    echo "created path: $out/fileprep"
+    cp $acc "$out/fileprep"
+    cp $csv "$out/fileprep"
 fi
 
 # Create directory to store trimmed fastq files
@@ -648,7 +665,6 @@ if ! command -v gatk > /dev/null; then
     echo "Failed to call gatk command. Please check your installation."
     exit 1
 fi
-
 ##########fqgrab housekeeping ends#########
 
 
@@ -717,6 +733,40 @@ dict=$(find $genomedir -maxdepth 1 -name "*.dict")
 count=`ls -1 $genomedir/*.fai 2>/dev/null | wc -l`
 if [ $count == 0 ]; then 
   samtools faidx $genome
+fi
+
+# Check which mapping software, and check for index
+if [[ "$tophat" = false ]]; then  
+# Check if indexed files already present for STAR
+    if [ -e "$out/ref/SAindex" ]; then
+        echo "STAR Genome Directory with indexed genome detected, skipping STAR indexing"
+    else
+        # Now, do the indexing step
+        # Define the SA index number argument
+        log_result=$(echo "scale=2; l($genomelength)/l(2)/2 - 1" | bc -l)
+        sain=$(echo "scale=0; if ($log_result < 14) $log_result else 14" | bc)
+        echo "Creating STAR genome index..."
+        # Create genome index 
+        STAR \
+            --runThreadN $threads \
+            --runMode genomeGenerate \
+            --genomeDir $out/ref \
+            --genomeFastaFiles $genome \
+            --sjdbGTFfile $annotation \
+            --sjdbGTFtagExonParentTranscript Parent \
+            --sjdbOverhang $overhang \
+            --genomeSAindexNbases $sain
+    fi
+else
+    # Check if bowtie index directory is already present
+    if [ -e "$out/btref" ]; then
+        echo "bowtie indexed directory detected, skipping generating bowtie index"
+    else
+    # If not, first check if ref folder is present, if not then make
+        if [ ! -d "$out/btref" ]; then mkdir "$out/btref"; echo "created path: $out/btref"; fi
+        echo "Creating Bowtie references..."
+        bowtie2-build $genome $out/btref
+    fi
 fi
 
 # Run a series of command checks to ensure fastq2hamr can run smoothly
@@ -800,12 +850,6 @@ if [ -z "$(ls -A $out/consensus)" ]; then
    exit 1
 fi
 
-echo "activating samtools space..."
-eval "$(conda shell.bash hook)"
-conda activate samt
-wait
-echo "samtools space activated"
-
 # Add depth columns with info from each rep alignment, mutate in place
 for f in $out/consensus/*.bed
 do
@@ -835,12 +879,6 @@ do
         done &
     done
 wait
-
-echo "activating hamrbox..."
-eval "$(conda shell.bash hook)"
-conda activate hamrbox
-wait
-echo "hamrbox activated"
 
 for f in $out/consensus/*.bed
 do
@@ -944,21 +982,7 @@ if [ ! -d "$dir/go/genelists" ]; then mkdir $dir/go/genelists; echo "created pat
 
 if [ ! -d "$dir/go/pantherout" ]; then mkdir $dir/go/pantherout; echo "created path: $dir/go/pantherout"; fi
 
-panther=""
-
-# Grab command from repo where needed
-shopt -s nocaseglob
-
-for folder in "$repo"/*; do
-    # Check if the folder name contains the string "hamr_py3" (case unsensitive)
-    if [[ "${folder,,}" == *pantherapi-pyclient* ]]; then
-        panther="$folder"
-    fi
-done
-
-shopt -u nocaseglob
-
-if [ ! -n "$panther" ]; then
+if [ ! -n "/pantherapi-pyclient" ]; then
     echo "panther installation not found, skipping go analysis"
 else    
     echo "generating genelist from mod table..."
@@ -975,9 +999,9 @@ else
         do
         n=$(basename $f)
         echo "$n"
-        python $panther/pthr_go_annots.py \
+        python /pantherapi-pyclient/pthr_go_annots.py \
             --service enrich \
-            --params_file $panther/params/enrich.json \
+            --params_file /pantherapi-pyclient/params/enrich.json \
             --seq_id_file $f \
             > $dir/go/pantherout/$n
         done
