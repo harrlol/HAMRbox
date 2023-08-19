@@ -19,11 +19,11 @@
 | -i | \<reference genome annotation.gff3> |
 | -l | \<read length\> |
 | -s | \<genome size in bp \> |
+| -e | \<genome annotation generator, see below for abbreviation code\>|
 | Optional |
 | -a | \[use TopHat2 instead of STAR\]|
 | -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand\]|
 | -f | \[filter\]|
-| -e | \[genome annotation generator\]|
 | -Q | \[HAMR: minimum qualuty score, default=30\]|
 | -C | \[HAMR: minimum coveragem default=50\]|
 | -E | \[HAMR: sequencing error, default=0.01\]|
@@ -32,6 +32,16 @@
 | -m | \[HAMR model\]|
 | -n | \[number of threads, default=4\]|
 | -h | \[help message\]|
+
+## Annotation Generator Code
+| Abbreviation Code | Organism |
+| --- | --- |
+| AT | Arabidopsis thaliana |
+| BD | Brachypodium distachyon |
+| ZM | Zea mays |
+| OSJ | Oryza sativa japonica |
+| OSI | Oryza sativa indica |
+| OSIR64 | Oryza sativa IR64 |
 
 
 ## Running HAMRbox (demo)
