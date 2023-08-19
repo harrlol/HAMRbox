@@ -1,5 +1,5 @@
 # HAMRbox: A user-friendly adaptation of HAMR
-
+![HAMRbox_Workflow_v3](https://github.com/harrlol/hamrbox/assets/87460010/65f3e8c2-634f-433c-a3d8-777ac64c71f1)
 ## Overview
 - HAMRbox is a bundle of selected tools that capture different parts of the pipeline tailored for the [High Throughput Annotation of Modified Ribonucleotides](https://github.com/GregoryLab/HAMR), abbreviated HAMR, developed by [Paul Ryvkin et al](https://rnajournal.cshlp.org/content/19/12/1684). HAMRbox aims to make the original method more accessible by automating the tedious pre-processing steps, allowing users to analyze RNA-seq data at an experiment scale. 
 - HAMRbox is high-throughput and performs RNA-modification analysis at a bioproject scale. HAMRbox performs constitutive trimming of acquired reads using Trim-Galore, and makes use of STAR as the aligning tool which reduces runtime with a rivaling robustness compared to TopHat2 as suggested in the original pipeline.
