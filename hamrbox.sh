@@ -270,8 +270,7 @@ fastq2hamr () {
     fi
 
     # Reassign / declare pipeline file directory
-    if [ ! -d "$out/pipeline/$smpkey""_temp" ] 
-    then
+    if [ ! -d "$out/pipeline/$smpkey""_temp" ]; then
         mkdir "$out/pipeline/$smpkey""_temp"
         echo "[$smpkey] created path: $out/pipeline/$smpkey""_temp"
     fi
@@ -281,8 +280,7 @@ fastq2hamr () {
 
 
     # Reassign hamr output directory
-    if [ ! -d "$out/hamr_out" ] 
-    then
+    if [ ! -d "$out/hamr_out" ]; then
         mkdir $out/hamr_out
         echo "created path: $out/hamr_out"
     fi
@@ -358,42 +356,42 @@ fastq2hamr () {
 
             echo "Creating Bowtie references..."
             bowtie2-build $genome $out/btref
+        fi
 
         # set read distabce based on mistmatch num
         red=8
-        if (($mismatch > 8)); then
-        red=$((mismatch +1))
-        fi
+        if [[ $mismatch > 8 ]]; then red=$((mismatch +1)); fi
 
         if [ "$det" -eq 1 ]; then
-        echo "[$smpkey] Performing TopHat2 with a single-end file."
-        tophat2 \
-            --library-type $tophatlib \
-            --read-mismatches $mismatch \
-            --read-edit-dist $red \
-            --max-multihits 10 \
-            --b2-very-sensitive \
-            --transcriptome-max-hits 10 \
-            --no-coverage-search \
-            -G $annotation \
-            -p $threads \
-            $out/btref \
-            $smp
+            echo "[$smpkey] Performing TopHat2 with a single-end file."
+            tophat2 \
+                --library-type $tophatlib \
+                --read-mismatches $mismatch \
+                --read-edit-dist $red \
+                --max-multihits 10 \
+                --b2-very-sensitive \
+                --transcriptome-max-hits 10 \
+                --no-coverage-search \
+                -G $annotation \
+                -p $threads \
+                $out/btref \
+                $smp
         else
         echo "[$smpkey] Performing TopHat2 with a paired-end file."
-        tophat2 \
-            --library-type $tophatlib \
-            --read-mismatches $mismatch \
-            --read-edit-dist $red \
-            --max-multihits 10 \
-            --b2-very-sensitive \
-            --transcriptome-max-hits 10 \
-            --no-coverage-search \
-            -G $annotation \
-            -p $threads \
-            $out/btref \
-            $smp1 $smp2
+            tophat2 \
+                --library-type $tophatlib \
+                --read-mismatches $mismatch \
+                --read-edit-dist $red \
+                --max-multihits 10 \
+                --b2-very-sensitive \
+                --transcriptome-max-hits 10 \
+                --no-coverage-search \
+                -G $annotation \
+                -p $threads \
+                $out/btref \
+                $smp1 $smp2
         fi
+    fi
     cd
 
     wait
@@ -481,8 +479,7 @@ fastq2hamr () {
         -fe $smpout/unique_RG_ordered_splitN.resort.bam $genome $model $smpout $smpname $quality $coverage $err H4 $pvalue $fdr .05
     wait
 
-    if [ ! -e "$smpout/${smpname}.mods.txt" ]
-    then 
+    if [ ! -e "$smpout/${smpname}.mods.txt" ]; then 
         cd $hamrout
         printf "${smpname} \n" >> zero_mod.txt
         cd
