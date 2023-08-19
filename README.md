@@ -18,18 +18,18 @@
 | -g | \<reference genome.fa> |
 | -i | \<reference genome annotation.gff3> |
 | -l | \<read length\> |
-| -s | \<genome size in bp \> |
+| -s | \<genome size in bp\> |
 | -e | \<genome annotation generator, see below for abbreviation code\>|
 | Optional |
-| -a | \[use TopHat2 instead of STAR\]|
-| -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand\]|
-| -f | \[filter\]|
+| -a | \[use TopHat2 instead of STAR, default use STAR\]|
+| -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand, default=fr-firststrand\]|
+| -f | \[filter, default=filter_SAM_number_hits.pl\]|
 | -Q | \[HAMR: minimum qualuty score, default=30\]|
 | -C | \[HAMR: minimum coveragem default=50\]|
 | -E | \[HAMR: sequencing error, default=0.01\]|
 | -P | \[HAMR: maximum p-value, default=1\]|
 | -F | \[HAMR: maximum fdr, default=0.05\]|
-| -m | \[HAMR model\]|
+| -m | \[HAMR model, default=euk_trna_mods.Rdata\]|
 | -n | \[number of threads, default=4\]|
 | -h | \[help message\]|
 
