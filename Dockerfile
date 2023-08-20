@@ -57,7 +57,6 @@ RUN conda install cutadapt==1.9.1 -y && \
 	conda install bedtools==2.31.0 -y && \
 	conda install python && \
 	conda install tophat && \
-	conda install mapfile && \
 	conda install bowtie2
 
 # Required files
