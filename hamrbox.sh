@@ -624,17 +624,17 @@ fi
 if [ ! -d "$out/ref" ]; then 
     mkdir "$out/ref"
     echo "created path: $out/ref"
-    cp $genome "$out/ref"
-    genome="$out/ref/$(basename $genome)"
-    cp $annotation "$out/ref"
-    annotation="$out/ref/$(basename $annotation)"
+    #cp $genome "$out/ref"
+    #genome="$out/ref/$(basename $genome)"
+    #cp $annotation "$out/ref"
+    #annotation="$out/ref/$(basename $annotation)"
 fi
 
 if [ ! -d "$out/fileprep" ]; then 
     mkdir "$out/fileprep"
     echo "created path: $out/fileprep"
-    cp $acc "$out/fileprep"
-    cp $csv "$out/fileprep"
+    #cp $acc "$out/fileprep"
+    #cp $csv "$out/fileprep"
 fi
 
 # Create directory to store trimmed fastq files
