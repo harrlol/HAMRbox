@@ -462,9 +462,11 @@ fastq2hamr () {
         cp $smpout/${smpname}.mods.txt $hamrout
     fi
 
-    # Move the unique_RG_ordered.bam and unique_RG_ordered.bai to a folder for read depth analysis
-    cp $smpout/unique_RG_ordered.bam $out/pipeline/depth/$smpname.bam
-    cp $smpout/unique_RG_ordered.bai $out/pipeline/depth/$smpname.bai
+  # Move the unique_RG_ordered.bam and unique_RG_ordered.bai to a folder for read depth analysis
+  cp $smpout/unique_RG_ordered.bam $out/pipeline/depth/$smpname.bam
+  cp $smpout/unique_RG_ordered.bai $out/pipeline/depth/$smpname.bai
+ fi
+ fi
 }
 
 consensusOverlap () {
@@ -596,6 +598,7 @@ fi
 
 mismatch=$(($length*6/100))
 overhang=$(($mismatch-1))
+#export PATH="$repo/gatk-4.3.0.0/:$PATH"
 
 ##########fqgrab housekeeping begins#########
 if [ ! -d "$out" ]; then mkdir $out; echo "created path: $out"; fi
