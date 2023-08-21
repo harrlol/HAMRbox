@@ -11,8 +11,8 @@
 | Command | Description |
 | --- | --- |
 | Required |
-| -o | \<project directory\> |
-| -t | \<SRA accession list.txt or folder of raw fastq files\> |
+| -o | \<project directory\> \n where you want your entire hamr project to be |
+| -t | \<SRA accession list.txt or folder of raw fastq files\> \n a txt file of all srr accession code to your desired reads or a path containing them |
 | -c | \<filenames for each fastq.csv\>|
 | -g | \<reference genome.fa> |
 | -i | \<reference genome annotation.gff3> |
