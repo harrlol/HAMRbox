@@ -9,11 +9,11 @@
 ## Command Line Arguments and Description
 
 | Command | Description |
-| --- | --- |
+| :---: | :---: |
 | Required |
 | -o | \<project directory\> <br> where you want your entire hamr project to be |
 | -t | \<SRA accession list.txt or folder of raw fastq files\> <br> a txt file of all srr accession code to your desired reads or a path containing them |
-| -c | \<filenames for each fastq.csv\>|
+| -c | \<filenames for each fastq.csv\> <br> a csv file that corresponds each srr code (or name of fastq file) to your desired nomenclature for each read |
 | -g | \<reference genome.fa> |
 | -i | \<reference genome annotation.gff3> |
 | -l | \<read length\> |
