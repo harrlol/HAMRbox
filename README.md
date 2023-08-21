@@ -27,7 +27,7 @@
 | -C | \[HAMR: minimum coverage\] <br> default=50 |
 | -E | \[HAMR: sequencing error\] <br> default=0.01 |
 | -P | \[HAMR: maximum p-value\] <br> default=1 |
-| -F | \[HAMR: maximum fdr\] <br> default=0.05 |
+| -F | \[HAMR: maximum FDR\] <br> default=0.05 |
 | -m | \[HAMR model\] <br> default=euk_trna_mods.Rdata |
 | -n | \[number of threads\] <br> default=4 |
 | -h | \[help message\]|
@@ -62,5 +62,15 @@ wget -qO- https://ftp.ensemblgenomes.ebi.ac.uk/pub/plants/release-57/gff3/arabid
 
 Run HAMRbox
 ```
-docker run --rm -v $(pwd):/working-dir -o /working-dir harrlol/hamrbox -t ~/demo/PRJNA596803_list.txt -c ~/demo/PRJNA596803_filenames.csv -g ~/path/to/genomefiles -l 50 -s 135000000
+docker run \
+  --rm \
+  -v $(pwd):/working-dir \
+  -o /working-dir harrlol/hamrbox \
+  -t ~/demo/PRJNA596803_list.txt \
+  -c ~/demo/PRJNA596803_filenames.csv \
+  -g ~/path/to/genome.fasta \
+  -i ~/path/to/genomeannotation.gff3 \
+  -l 50 \
+  -s 135000000 \
+  -e AT
 ```
