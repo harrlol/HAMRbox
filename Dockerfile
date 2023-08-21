@@ -25,8 +25,8 @@ RUN apt-get update && apt-get install -y g++ \
 		unzip \
 		bzip2 \
 		python3.6-dev \
-                python3-pip \
-                apt-utils \
+        python3-pip \
+        apt-utils \
 		tzdata \
 		perl \
 		wget \
@@ -55,9 +55,10 @@ RUN conda install cutadapt==1.9.1 -y && \
 	conda install trim-galore==0.6.10 -y && \
 	conda install STAR==2.7.10b -y && \
 	conda install bedtools==2.31.0 -y && \
-	conda install python && \
-	conda install tophat && \
-	conda install bowtie2
+	conda install samtools==1.17 -y && \
+	conda install python -y && \
+	conda install tophat -y && \
+	conda install bowtie2 -y
 
 # Required files
 WORKDIR /
@@ -71,14 +72,14 @@ RUN apt-get -y install ca-certificates software-properties-common gnupg2 gnupg1 
 	Rscript -e 'install.packages("splitstackshape", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
 	Rscript -e 'install.packages("dplyr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
 	Rscript -e 'install.packages("tidyr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("data.table", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("ggplot2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("janitor", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("pheatmap", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("readr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("reshape2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("stringr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
-    	Rscript -e 'install.packages("viridislite", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("data.table", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("ggplot2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("janitor", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("pheatmap", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("readr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("reshape2", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("stringr", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
+    Rscript -e 'install.packages("viridislite", dependencies = TRUE, repos="http://cran.rstudio.com/");' && \
 	Rscript -e 'install.packages("getopt", dependencies = TRUE, repos="http://cran.rstudio.com/");'
 
 ## HAMR (now working under Python 3)
@@ -87,16 +88,6 @@ RUN git clone https://github.com/harrlol/HAMR && \
 	chmod +x /HAMR/hamr.py && cp /HAMR/hamr.py $BINPATH && \
 	cp -R /HAMR/models /usr/bin/hamr_models
 ENV HAMR_MODELS_PATH=/usr/bin/hamr_models
-
-# samtools (1.17 for coverage function)
-RUN wget https://github.com/samtools/samtools/releases/download/1.17/samtools-1.17.tar.bz2 && \
-	tar -xvjf samtools-1.17.tar.bz2 && \
- 	cd samtools-1.17 && \
-	./configure --prefix=/usr/bin && \
-	make && \
-	make install
-	ENV PATH="/samtools-1.17:${PATH}"
-WORKDIR /
 
 # GATK (4.3.0.0)
 RUN wget https://github.com/broadinstitute/gatk/releases/download/4.3.0.0/gatk-4.3.0.0.zip && \
