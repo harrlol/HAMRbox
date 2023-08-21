@@ -20,16 +20,16 @@
 | -s | \<genome size in bp\> <br> an integer, the number of base pairs of the genome of this model organism |
 | -e | \<genome annotation generator code\> <br> see below for abbreviation code, one code per organism/cultivar |
 | Optional |
-| -a | \[use TopHat2 instead of STAR, default use STAR\]|
-| -b | \[Tophat library choice: fr-unstranded, fr-firststrand, fr-secondstrand, default=fr-firststrand\]|
-| -f | \[filter, default=filter_SAM_number_hits.pl\]|
-| -Q | \[HAMR: minimum qualuty score, default=30\]|
-| -C | \[HAMR: minimum coveragem default=50\]|
-| -E | \[HAMR: sequencing error, default=0.01\]|
-| -P | \[HAMR: maximum p-value, default=1\]|
-| -F | \[HAMR: maximum fdr, default=0.05\]|
-| -m | \[HAMR model, default=euk_trna_mods.Rdata\]|
-| -n | \[number of threads, default=4\]|
+| -a | \[use Tophat2 instead of STAR\] <br> default uses STAR |
+| -b | \[Tophat2 library choice: fr-unstranded, fr-firststrand, fr-secondstrand\] <br> default=fr-firststrand |
+| -f | \[filter\] <br> default=filter_SAM_number_hits.pl |
+| -Q | \[HAMR: minimum qualuty score\] <br> default=30 |
+| -C | \[HAMR: minimum coverage\] <br> default=50 |
+| -E | \[HAMR: sequencing error\] <br> default=0.01 |
+| -P | \[HAMR: maximum p-value\] <br> default=1 |
+| -F | \[HAMR: maximum fdr\] <br> default=0.05 |
+| -m | \[HAMR model\] <br> default=euk_trna_mods.Rdata |
+| -n | \[number of threads\] <br> default=4 |
 | -h | \[help message\]|
 
 ## Annotation Generator Code
