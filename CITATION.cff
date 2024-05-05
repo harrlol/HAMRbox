@@ -3,7 +3,7 @@ message: "If you use this software, please cite it as below."
 authors:
   - family-names: Li
     given-names: Jiatong
-title: "HAMRbox"
+title: "HAMRbox: A user-friendly adaptation of HAMR"
 version: beta
 identifiers:
   - type: doi
